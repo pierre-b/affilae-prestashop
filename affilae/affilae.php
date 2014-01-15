@@ -8,7 +8,7 @@ class Affilae extends Module
   {
     $this->name = 'affilae';
     $this->tab = 'advertising_marketing';
-    $this->version = '1.2';
+    $this->version = '1.3';
     $this->author = 'affilae.com';
     $this->displayName = 'affilae';
     
@@ -313,6 +313,7 @@ class Affilae extends Module
     {
       $order = $params['objOrder'];
       $orderId = $order->id;
+      $customerId = $order->id_customer;
       $total = $order->total_products; //without taxes
       $payment = self::getPaymentName($order->module);
       $trackings = array();
@@ -365,19 +366,19 @@ class Affilae extends Module
               $totalForThisRule += $p['total_wt'];
               $totalForCategories += $p['total_wt'];
             }
-            $trackings[] = array('code'=>$rule['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'payment'=>$payment);
+            $trackings[] = array('code'=>$rule['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
           }
           
           //others rules for rest of products, uses the first remaining rule
           if(count($otherRules) > 0)
           {
             $totalRest = $total-$totalForCategories;
-            $trackings[] = array('code'=>$otherRules[0]['code'], 'total'=>$totalRest, 'id'=>$orderId, 'payment'=>$payment);
+            $trackings[] = array('code'=>$otherRules[0]['code'], 'total'=>$totalRest, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
           }
         }
         elseif(count($otherRules) > 0)
         {
-          foreach($otherRules as $rule) $trackings[] = array('code'=>$rule['code'], 'total'=>$total, 'id'=>$orderId, 'payment'=>$payment);
+          foreach($otherRules as $rule) $trackings[] = array('code'=>$rule['code'], 'total'=>$total, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
         }
         
         $smarty->assign('trackings', $trackings);

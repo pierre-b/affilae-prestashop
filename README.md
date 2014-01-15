@@ -42,6 +42,8 @@ Mise à jour
 Changelog
 -------------------------
 
+1.3  Le paramètre "customer" est désormais remonté dans les conversions pour permettre le "Revenue Share"
+
 1.2  Le javascript est désormais affiché dans le footer ({$HOOK_FOOTER}).
      Le bug "Undefined variable: trackings" a été fixé.
 
