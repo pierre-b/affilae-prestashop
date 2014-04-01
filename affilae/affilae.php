@@ -309,81 +309,81 @@ class Affilae extends Module
     
     $rules = unserialize(Configuration::get('AFFILAE_RULES'));
     
-    if(count($rules)>0)
-    {
-      $order = $params['objOrder'];
-      $orderId = $order->id;
-      $customerId = $order->id_customer;
-      $total = $order->total_products; //without taxes
-      $payment = self::getPaymentName($order->module);
-      $trackings = array();
+    if(count($rules) == 0) return '';
 
-      if (Validate::isLoadedObject($order))
+    $order = $params['objOrder'];
+    $orderId = $order->id;
+    $customerId = $order->id_customer;
+    $total = $order->total_products; //without taxes
+    $payment = self::getPaymentName($order->module);
+    $trackings = array();
+
+    if (Validate::isLoadedObject($order))
+    {
+      $hasCategories = false;
+      $rulesWithCategories = array();
+      $otherRules = array();
+      
+      foreach($rules as $rule) //parse rules for categories
       {
-        $hasCategories = false;
-        $rulesWithCategories = array();
-        $otherRules = array();
-        
-        foreach($rules as $rule) //parse rules for categories
+        if($rule['has_cat'] == 'choose')
         {
-          if($rule['has_cat'] == 'choose')
-          {
-            $hasCategories = true;
-            $rulesWithCategories[] = $rule;
-          }
-          else $otherRules[] = $rule;
+          $hasCategories = true;
+          $rulesWithCategories[] = $rule;
         }
-        
-        if($hasCategories)
-        {
-          $products = $order->getProducts(); //return array Products with price, quantity (with taxe and without)
-          
-          $categories = array();
-          $totalForCategories = 0;
-          
-          //retrieve default category id and sort products by categories
-          foreach($products as $product)
-          {
-            $categoryId = Db::getInstance()->getValue('
-                SELECT id_category_default FROM `'._DB_PREFIX_.'product` p
-                WHERE p.id_product = '.(int)($product['product_id']));
-            $categories[$categoryId][] = $product;
-          }
-          
-          //create tracking codes for each rules
-          foreach($rulesWithCategories as $ruleWithCategories)
-          {
-            $productsForThisRule = array();
-            //get products for each categories of this rule
-            foreach($ruleWithCategories['categories'] as $category)
-            {
-              if(isset($categories[$category])) $productsForThisRule = array_merge($productsForThisRule, $categories[$category]);
-            }
-            $totalForThisRule = 0;
-            //count the total paid with taxes for this rule
-            foreach($productsForThisRule as $p)
-            {
-              $totalForThisRule += $p['total_wt'];
-              $totalForCategories += $p['total_wt'];
-            }
-            $trackings[] = array('code'=>$rule['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
-          }
-          
-          //others rules for rest of products, uses the first remaining rule
-          if(count($otherRules) > 0)
-          {
-            $totalRest = $total-$totalForCategories;
-            $trackings[] = array('code'=>$otherRules[0]['code'], 'total'=>$totalRest, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
-          }
-        }
-        elseif(count($otherRules) > 0)
-        {
-          foreach($otherRules as $rule) $trackings[] = array('code'=>$rule['code'], 'total'=>$total, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
-        }
-        
-        $smarty->assign('trackings', $trackings);
-        return $this->display(__FILE__, 'tracking.tpl');
+        else $otherRules[] = $rule;
       }
+
+      if($hasCategories)
+      {
+        $products = $order->getProducts(); //return array Products with price, quantity (with taxe and without)
+        
+        $categories = array();
+        $totalForCategories = 0;
+        
+        //retrieve default category id and sort products by categories
+        foreach($products as $product)
+        {
+          $categoryId = Db::getInstance()->getValue('
+              SELECT id_category_default FROM `'._DB_PREFIX_.'product` p
+              WHERE p.id_product = '.(int)($product['product_id']));
+          $categories[$categoryId][] = $product;
+        }
+       
+        //create tracking codes for each rules
+        foreach($rulesWithCategories as $ruleWithCategories)
+        {
+          $productsForThisRule = array();
+          //get products for each categories of this rule
+          foreach($ruleWithCategories['categories'] as $category)
+          {
+            if(isset($categories[$category])) $productsForThisRule = array_merge($productsForThisRule, $categories[$category]);
+          }
+          $totalForThisRule = 0;
+          //count the total paid with taxes for this rule
+          foreach($productsForThisRule as $p)
+          {
+            $totalForThisRule += $p['total_wt'];
+            $totalForCategories += $p['total_wt'];
+          }
+          if($totalForThisRule > 0) $trackings[] = array('code'=>$ruleWithCategories['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
+        }
+        
+        //others rules for rest of products, uses the first remaining rule
+        if(count($otherRules) > 0)
+        {
+          $totalRest = $total-$totalForCategories;
+          if($totalRest > 0) $trackings[] = array('code'=>$otherRules[0]['code'], 'total'=>$totalRest, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
+        }
+      }
+      elseif(count($otherRules) > 0)
+      {
+        foreach($otherRules as $rule) $trackings[] = array('code'=>$rule['code'], 'total'=>$total, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
+      }
+      
+      $smarty->assign('trackings', $trackings);
+      return $this->display(__FILE__, 'tracking.tpl');
     }
+
   }
 }
