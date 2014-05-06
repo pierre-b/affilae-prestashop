@@ -8,7 +8,7 @@ class Affilae extends Module
   {
     $this->name = 'affilae';
     $this->tab = 'advertising_marketing';
-    $this->version = '1.5';
+    $this->version = '1.4';
     $this->author = 'affilae.com';
     $this->displayName = 'affilae';
     
