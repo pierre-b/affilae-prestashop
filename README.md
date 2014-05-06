@@ -42,6 +42,8 @@ Mise à jour
 Changelog
 -------------------------
 
+1.5  Les prix des produits remontés par catégories sont désormais HT
+
 1.4  Le bug de commissionnement par catégorie de produit a été fixé
 
 1.3  Le paramètre "customer" est désormais remonté dans les conversions pour permettre le "Revenue Share"

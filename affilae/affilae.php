@@ -3,12 +3,12 @@
 // error_reporting(E_ALL);
 
 class Affilae extends Module
-{	
+{ 
   function __construct()
   {
     $this->name = 'affilae';
     $this->tab = 'advertising_marketing';
-    $this->version = '1.4';
+    $this->version = '1.5';
     $this->author = 'affilae.com';
     $this->displayName = 'affilae';
     
@@ -363,8 +363,8 @@ class Affilae extends Module
           //count the total paid with taxes for this rule
           foreach($productsForThisRule as $p)
           {
-            $totalForThisRule += $p['total_wt'];
-            $totalForCategories += $p['total_wt'];
+            $totalForThisRule += $p['total_price']; //without taxes
+            $totalForCategories += $p['total_price']; //without taxes
           }
           if($totalForThisRule > 0) $trackings[] = array('code'=>$ruleWithCategories['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
         }
