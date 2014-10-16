@@ -8,7 +8,7 @@ class Affilae extends Module
   {
     $this->name = 'affilae';
     $this->tab = 'advertising_marketing';
-    $this->version = '1.5';
+    $this->version = '1.6';
     $this->author = 'affilae.com';
     $this->displayName = 'affilae';
     
@@ -149,11 +149,6 @@ class Affilae extends Module
     $smarty->assign('affilaeCode', $rule_code);
     $smarty->assign('affilaeHasCategories', $rule_has_categories);
 
-    if($rule_has_categories == 'choose')
-    {
-      foreach ($rule_categories AS $k => $row) $indexedCategories[] = $row;
-    }
-    
 
     if(empty($rule_title))
     {
@@ -179,12 +174,19 @@ class Affilae extends Module
       $catError = "Le choix des catégories concernées n'est pas correct.";
       $smarty->assign('catError', $catError);
     }
-    if($rule_has_categories == 'all' AND count($rule_categories) == 0)
+    if($rule_has_categories == 'choose' AND (!$rule_categories || count($rule_categories) == 0))
     {
       $hasError = true;
       $catError = "Veuillez choisir au moins une catégorie.";
       $smarty->assign('catError', $catError);
     }
+
+    if($rule_has_categories == 'choose')
+    {
+      foreach ($rule_categories AS $k => $row) $indexedCategories[] = $row;
+    }
+
+    if($rule_has_categories == 'all') $rule_categories = false;
 
     if(!$hasError)
     {
@@ -314,7 +316,12 @@ class Affilae extends Module
     $order = $params['objOrder'];
     $orderId = $order->id;
     $customerId = $order->id_customer;
-    $total = $order->total_products; //without taxes
+
+    $discount = (float) $order->total_discounts_tax_excl;
+    $totalProducts = (float) $order->total_products;
+
+    // total is has no rule by products category
+    $total = $totalProducts-$discount; //without taxes
     $payment = self::getPaymentName($order->module);
     $trackings = array();
 
@@ -336,8 +343,11 @@ class Affilae extends Module
 
       if($hasCategories)
       {
+        // if has discount, apply its ratio on all rules total 
+        if($discount > 0) $discountCoef = (($discount*100)/$totalProducts)/100; // 50% discount becomes 0.5
+
         $products = $order->getProducts(); //return array Products with price, quantity (with taxe and without)
-        
+
         $categories = array();
         $totalForCategories = 0;
         
@@ -366,13 +376,26 @@ class Affilae extends Module
             $totalForThisRule += $p['total_price']; //without taxes
             $totalForCategories += $p['total_price']; //without taxes
           }
-          if($totalForThisRule > 0) $trackings[] = array('code'=>$ruleWithCategories['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
+
+          if($totalForThisRule > 0) 
+          {
+            $discountForThisRule = ($discount > 0) ? $totalForThisRule*$discountCoef : 0;
+
+            $totalForThisRule = $totalForThisRule-$discountForThisRule;
+
+            $trackings[] = array('code'=>$ruleWithCategories['code'], 'total'=>$totalForThisRule, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
+          }
         }
         
         //others rules for rest of products, uses the first remaining rule
         if(count($otherRules) > 0)
         {
           $totalRest = $total-$totalForCategories;
+
+          $discountForThisRule = ($discount > 0) ? $totalRest*$discountCoef : 0;
+
+          $totalRest = $totalRest-$discountForThisRule;
+
           if($totalRest > 0) $trackings[] = array('code'=>$otherRules[0]['code'], 'total'=>$totalRest, 'id'=>$orderId, 'customerId'=>$customerId, 'payment'=>$payment);
         }
       }

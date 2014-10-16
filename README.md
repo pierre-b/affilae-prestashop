@@ -42,6 +42,8 @@ Mise à jour
 Changelog
 -------------------------
 
+1.6  Les bons de réduction sont désormais pris en charge, et leur impact sur le panier est divisé équitablement parmis toutes les règles de conversions filtrant les catégories de produit
+
 1.5  Les prix des produits remontés par catégories sont désormais HT
 
 1.4  Le bug de commissionnement par catégorie de produit a été fixé
